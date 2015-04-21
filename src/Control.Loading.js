@@ -16,13 +16,15 @@
                 position: 'topleft',
                 separate: false,
                 zoomControl: null,
+                lockMap: false,
+                oneLayer: null,
                 spinjs: false,
-                spin: { 
-                  lines: 7, 
-                  length: 3, 
-                  width: 3, 
-                  radius: 5, 
-                  rotate: 13, 
+                spin: {
+                  lines: 7,
+                  length: 3,
+                  width: 3,
+                  radius: 5,
+                  rotate: 13,
                   top: "83%"
                 }
             },
@@ -31,7 +33,7 @@
                 L.setOptions(this, options);
                 this._dataLoaders = {};
 
-                // Try to set the zoom control this control is attached to from the 
+                // Try to set the zoom control this control is attached to from the
                 // options
                 if (this.options.zoomControl !== null) {
                     this.zoomControl = this.options.zoomControl;
@@ -42,8 +44,14 @@
                 if (this.options.spinjs && (typeof Spinner !== 'function')) {
                     return console.error("Leaflet.loading cannot load because you didn't load spin.js (http://fgnass.github.io/spin.js/), even though you set it in options.");
                 }
-                this._addLayerListeners(map);
-                this._addMapListeners(map);
+
+                if (!this.options.oneLayer) {
+                  this._addLayerListeners(map);
+                  this._addMapListeners(map);
+                }
+                else {
+                  this._addOneLayerListener(this.options.oneLayer);
+                }
 
                 // Try to set the zoom control this control is attached to from the map
                 // the control is being added to
@@ -58,7 +66,7 @@
                 // Create the loading indicator
                 var classes = 'leaflet-control-loading';
                 var container;
-                if (this.zoomControl && !this.options.separate) {
+                if (this.zoomControl && !this.options.separate && !this.options.lockMap) {
                     // If there is a zoom control, hook into the bottom of it
                     container = this.zoomControl._container;
                     // These classes are no longer used as of Leaflet 0.6
@@ -71,7 +79,9 @@
                 else {
                     // Otherwise, create a container for the indicator
                     container = L.DomUtil.create('div', 'leaflet-control-zoom leaflet-bar');
+
                 }
+
                 this._indicator = L.DomUtil.create('a', classes, container);
                 if (this.options.spinjs) {
                   this._spinner = new Spinner(this.options.spin).spin();
@@ -181,10 +191,40 @@
 
             _handleLoading: function(e) {
                 this.addLoader(this.getEventId(e));
+
+                if(this.options.lockMap) {
+                  var map = e.target._map;
+
+                  var panes = map.getPanes();
+                  panes.mapPane.style.opacity = 0.5;
+
+                  map.dragging.disable();
+                  map.touchZoom.disable();
+                  map.doubleClickZoom.disable();
+                  map.scrollWheelZoom.disable();
+                  map.boxZoom.disable();
+                  map.keyboard.disable();
+                  if (map.tap) map.tap.disable();
+                }
             },
 
             _handleLoad: function(e) {
                 this.removeLoader(this.getEventId(e));
+
+                if(this.options.lockMap) {
+                  var map = e.target._map;
+
+                  var panes = map.getPanes();
+                  panes.mapPane.style.opacity = 1;
+
+                  map.dragging.enable();
+                  map.touchZoom.enable();
+                  map.doubleClickZoom.enable();
+                  map.scrollWheelZoom.enable();
+                  map.boxZoom.enable();
+                  map.keyboard.enable();
+                  if (map.tap) map.tap.enable();
+                }
             },
 
             getEventId: function(e) {
@@ -198,7 +238,7 @@
             },
 
             _layerAdd: function(e) {
-                if (!e.layer || !e.layer.on) return
+                if (!e.layer || !e.layer.on) return;
                 try {
                     e.layer.on({
                         loading: this._handleLoading,
@@ -212,8 +252,39 @@
                 }
             },
 
+            _addOneLayerListener: function(layer) {
+              if (!layer.on) return;
+
+              if (layer.eachLayer) {
+                this._addLayerListeners(layer);
+              }
+              else {
+                layer.on({
+                    loading: this._handleLoading,
+                    load: this._handleLoad
+                }, this);
+              }
+
+            },
+
+            _removeOneListener: function(layer) {
+                // Remove listeners for begin and end of load from all layers
+                if (!layer.off) return;
+
+                if(layer.eachLayer) {
+                  this._removeLayerListeners(layer);
+                }
+                else {
+                  layer.off({
+                      loading: this._handleLoading,
+                      load: this._handleLoad
+                  }, this);
+                }
+
+            },
+
             _addLayerListeners: function(map) {
-                // Add listeners for begin and end of load to any layers already on the 
+                // Add listeners for begin and end of load to any layers already on the
                 // map
                 map.eachLayer(function(layer) {
                     if (!layer.on) return;
