@@ -193,7 +193,7 @@
                 this.addLoader(this.getEventId(e));
 
                 if(this.options.lockMap) {
-                  var map = e.target._map;
+                  var map = e.target._map || e.target;
 
                   var panes = map.getPanes();
                   panes.mapPane.style.opacity = 0.5;
@@ -212,7 +212,7 @@
                 this.removeLoader(this.getEventId(e));
 
                 if(this.options.lockMap) {
-                  var map = e.target._map;
+                  var map = e.target._map || e.target;
 
                   var panes = map.getPanes();
                   panes.mapPane.style.opacity = 1;
