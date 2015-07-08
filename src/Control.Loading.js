@@ -171,8 +171,8 @@
                     }
                 }
                 
-                if (this.options.lockMap) {
-                    var map = e.target._map || e.target;
+                if (this.options.lockMap && this._map) {
+                    var map = this._map;
 
                     var panes = map.getPanes();
                     panes.mapPane.style.opacity = 1;
