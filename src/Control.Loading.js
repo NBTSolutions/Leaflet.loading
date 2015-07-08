@@ -170,6 +170,22 @@
                         L.DomUtil.addClass(this.zoomControl._ui.zoomOut, 'leaflet-bar-part-bottom');
                     }
                 }
+                
+                if (this.options.lockMap) {
+                    var map = e.target._map || e.target;
+
+                    var panes = map.getPanes();
+                    panes.mapPane.style.opacity = 1;
+    
+                    map.dragging.enable();
+                    map.touchZoom.enable();
+                    map.doubleClickZoom.enable();
+                    map.scrollWheelZoom.enable();
+                    map.boxZoom.enable();
+                    map.keyboard.enable();
+                    if (map.tap) map.tap.enable();
+                }
+
             },
 
             _getLastControlButton: function() {
@@ -210,21 +226,6 @@
 
             _handleLoad: function(e) {
                 this.removeLoader(this.getEventId(e));
-
-                if(this.options.lockMap) {
-                  var map = e.target._map || e.target;
-
-                  var panes = map.getPanes();
-                  panes.mapPane.style.opacity = 1;
-
-                  map.dragging.enable();
-                  map.touchZoom.enable();
-                  map.doubleClickZoom.enable();
-                  map.scrollWheelZoom.enable();
-                  map.boxZoom.enable();
-                  map.keyboard.enable();
-                  if (map.tap) map.tap.enable();
-                }
             },
 
             getEventId: function(e) {
